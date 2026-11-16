@@ -1,0 +1,30 @@
+import { excluir, salvar } from '@actions/clientes';
+import Crud from '@components/Crud';
+import { descriptografar } from '@lib/cripto';
+import { prisma } from '@lib/prisma';
+
+const colunas = [
+    { title: 'Nome', dataIndex: 'nome' },
+    { title: 'CPF', dataIndex: 'cpf' },
+    { title: 'Telefone', dataIndex: 'celular' },
+];
+
+const campos = [
+    { name: 'nome', label: 'Nome' },
+    { name: 'cpf', label: 'CPF' },
+    { name: 'celular', label: 'Telefone', opcional: true },
+];
+
+export default async function Clientes({ searchParams }) {
+    const { busca = '' } = await searchParams;
+    const termo = busca.toLowerCase();
+
+    const clientes = await prisma.cliente.findMany({ orderBy: { nome: 'asc' } });
+    const registros = clientes
+        .map((cliente) => ({ ...cliente, cpf: descriptografar(cliente.cpf) }))
+        .filter(
+            (cliente) => cliente.nome.toLowerCase().includes(termo) || cliente.cpf.includes(termo),
+        );
+
+    return <Crud titulo="Clientes" {...{ colunas, campos, registros, salvar, excluir, busca }} />;
+}
